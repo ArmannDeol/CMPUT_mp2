@@ -3,7 +3,8 @@ import json
 
 def mongoimport(jsonfile, db_name, coll_name, db_port):
 
-    port_connection = 'monogdb://localhost:' + str(db_port)
+    port_connection = 'mongodb://localhost:' + str(db_port)
+    #print(port_connection)
     client = MongoClient(port_connection)
     db = client[db_name]
     coll = db[coll_name]
@@ -20,7 +21,7 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
             line = file.readline()
             count += 1
 
-    print('Loaded ' + count + ' entries...')        
+    print('Loaded ' + str(count) + ' entries...')        
     return 
 
 
