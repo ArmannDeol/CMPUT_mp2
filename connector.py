@@ -1,41 +1,37 @@
 from pymongo import MongoClient
-import pandas as pd
-import os
-import ast
-
 import json
 
-def mongoimport(csv_path, db_name, coll_name, db_url='localhost', db_port=27000):
-    """ Imports a csv file at path csv_name to a mongo colection
-    returns: count of the documants in the new collection
-    """
-    client = MongoClient('mongodb://localhost:16639')
+def mongoimport(jsonfile, db_name, coll_name, db_port):
+
+    port_connection = 'monogdb://localhost:' + str(db_port)
+    client = MongoClient(port_connection)
     db = client[db_name]
     coll = db[coll_name]
     coll.delete_many({})
-    with open(csv_path) as file:
-        line = file.readline().strip()
+    count = 0
+    with open(jsonfile) as file:
+        line = file.readline()
+        print("Running...")
         
-        #file_data = json.load(file)
         while line:
-            content = ast.literal_eval(line)
-            
-            print(content)
-            coll.insert_one(content)
-            line = file.readline().strip()
-            
-        
-    
-    return #coll.count()
+            line = json.loads(line)
+            #print(line)
+            coll.insert_one(line)
+            line = file.readline()
+            count += 1
+
+    print('Loaded ' + count + ' entries...')        
+    return 
 
 
 def main():
     db_port = input('Database port: ')
-    db_url = 'localhost'
-    csv_path = "dblp-ref-1m.json"
+    
+    jsonfile = "dblp-ref-1m.json"
+    jsonfile = input('Enter json file name: ')
     db_name = '291_db'
     coll_name = 'dblp'
-    mongoimport(csv_path, db_name, coll_name,db_url, db_port)
+    mongoimport(jsonfile, db_name, coll_name, db_port)
 
 
 if __name__ == "__main__":
