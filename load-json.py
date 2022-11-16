@@ -1,12 +1,16 @@
 from pymongo import MongoClient
 import json
 
+
+# TODO: rename file to load-json.py as per spec
+# TODO: since the actual MongoImport tool is from the command line, maybe we run the command with our python code?
 def mongoimport(jsonfile, db_name, coll_name, db_port):
 
     port_connection = 'mongodb://localhost:' + str(db_port)
     #print(port_connection)
     client = MongoClient(port_connection)
     db = client[db_name]
+    # TODO: spec states to drop the table, "col.drop"? Not sure if there is a performance or big diff between the two
     coll = db[coll_name]
     coll.delete_many({})
     count = 0
