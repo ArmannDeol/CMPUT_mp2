@@ -18,8 +18,42 @@ def main_menu(db):
         \n')
         selection = input('Select from the above options: ')
 
+        if selection == '1':
+            searchArticle(db)
+
 def searchArticle(db):
+    coll = db['dblp']
     keywords = input('Enter keywords in a space seperated list: ').split()
+    lower = {
+        "$project":
+            {
+                "title" : {"$toLower" : "$title"},
+                "authors" : {"$toLower" : "$authors"},
+                "abstract" : {"$toLower" : "$abstract"},
+                "venue" : {"$toLower" : "$venue"},
+                "year" : {"$toLower" : "$year"}
+            }
+    }
+    #year = int(keywords[0])
+    matching = {
+        "$match" :
+            {
+                "title" : 
+                    {
+                        "$regex" : keywords[0]
+                    }
+                    
+            }
+    }
+    limit = {"$limit" : 5}
+    
+
+    pipeline = [matching, limit]
+    ret = coll.aggregate(pipeline)
+    # ret_count = coll.count_documents({"year" : 2011})
+    # print(ret_count)
+    for each in ret:
+        print(each["title"])
 
 
 

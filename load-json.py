@@ -21,20 +21,39 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
         while line:
             line = json.loads(line)
             #print(line)
+
             coll.insert_one(line)
+            
+            
             line = file.readline()
             count += 1
 
+    addTokens = {
+                "$addFields" : 
+                    {
+                        "title_tokenized" : {
+                            "$split" : ["$title", " "]
+                        },
+                        "abstract_tokenized" : {
+                            "$split" : ["$abstract", " "]
+                        },
+                        "venue_tokenized" : {
+                            "$split" : ["$venue", " "]
+                        }
+                    }
+            }
+    out = {"$out" : coll_name}
+    pipeline = [addTokens, out]
+    coll.aggregate(pipeline)
     print('Loaded ' + str(count) + ' entries...')        
     return 
-
+#TODO: tokenize title, abstract, venue
 
 def main():
     db_port = input('Database port: ')
-    
     jsonfile = "dblp-ref-1m.json"
     jsonfile = input('Enter json file name: ')
-    db_name = '291_db'
+    db_name = '291db'
     coll_name = 'dblp'
     mongoimport(jsonfile, db_name, coll_name, db_port)
 
