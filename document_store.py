@@ -24,6 +24,10 @@ def main_menu(db):
             exit()
         elif selection == '1':
             searchArticle(db)
+        elif selection == '3':
+            listVenues(db)
+        else:
+            print('Please select a valid option...')
 
 def searchArticle(db):
     coll = db['dblp']
@@ -100,8 +104,39 @@ def searchArticle(db):
     for each in ret:
         print(each["title"])
 
+def searchAuthors(db):
+    # provide keyword (SINGULAR)
+    # all authors whose name contain the keyword, case insensitive
+    # for each author: list name, number of publications
+    # user can select author and see title, year, and venue of all articles by that author
+    # results should be sorted based on year with recent articles showing up first
+    coll = db['dblp']
+    return
 
+def listVenues(db):
+    coll = db['dblp']
+    # n is valid
+    while True:
+        try:
+            n = int(input('Enter an integer to list the top number of venues: '))
+        except ValueError:
+            print('Please enter a valid integer')
+            continue
+        else:
+            print('Displaying top',n, 'venues...')
+            break
+    # rest of code
+    # for each venue: list venue, number of articles in venue, number of articles that reference paper in venue,
+    # sort results based on number of papers that reference that venue
+    return
 
+def addArticle(db):
+    coll = db['dblp']
+    # unique id, title, list of authors, year
+    # abstract and venue = null
+    # references = empty array
+    # n_citations = 0
+    return 
 
 def main():
     port = input('Enter port number: ')
