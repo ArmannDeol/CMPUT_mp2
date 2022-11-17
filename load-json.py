@@ -2,18 +2,18 @@ from pymongo import MongoClient
 import json
 
 
-# TODO: rename file to load-json.py as per spec
 # TODO: since the actual MongoImport tool is from the command line, maybe we run the command with our python code?
 def mongoimport(jsonfile, db_name, coll_name, db_port):
-
     port_connection = 'mongodb://localhost:' + str(db_port)
     #print(port_connection)
     client = MongoClient(port_connection)
     db = client[db_name]
-    # TODO: spec states to drop the table, "col.drop"? Not sure if there is a performance or big diff between the two
+    # TODO use drop or delete
     coll = db[coll_name]
-    print('Deleting entries...')
-    coll.delete_many({})
+    coll.drop()
+    print('Dropping table...')
+    # print('Deleting entries...')
+    # coll.delete_many({})
     count = 0
     with open(jsonfile) as file:
         line = file.readline()
@@ -22,10 +22,7 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
         while line:
             line = json.loads(line)
             #print(line)
-
             coll.insert_one(line)
-            
-            
             line = file.readline()
             count += 1
     
@@ -51,6 +48,7 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
     return 
 #TODO: add text indexs
 
+# ? could we take port number and file name as command line arg which was okayed in forums, could improve productivity?
 def main():
     db_port = input('Database port: ')
     # jsonfile = "dblp-ref-1m.json"
