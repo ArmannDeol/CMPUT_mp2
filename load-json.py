@@ -12,6 +12,7 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
     db = client[db_name]
     # TODO: spec states to drop the table, "col.drop"? Not sure if there is a performance or big diff between the two
     coll = db[coll_name]
+    print('Deleting entries...')
     coll.delete_many({})
     count = 0
     with open(jsonfile) as file:
@@ -27,7 +28,7 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
             
             line = file.readline()
             count += 1
-
+    
     addTokens = {
                 "$addFields" : 
                     {
@@ -39,7 +40,8 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
                         },
                         "venue_tokenized" : {
                             "$split" : ["$venue", " "]
-                        }
+                        },
+                        "year_string" : {"$toString" : "$year"}
                     }
             }
     out = {"$out" : coll_name}
@@ -47,11 +49,11 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
     coll.aggregate(pipeline)
     print('Loaded ' + str(count) + ' entries...')        
     return 
-#TODO: tokenize title, abstract, venue
+#TODO: add text indexs
 
 def main():
     db_port = input('Database port: ')
-    jsonfile = "dblp-ref-1m.json"
+    
     jsonfile = input('Enter json file name: ')
     db_name = '291db'
     coll_name = 'dblp'

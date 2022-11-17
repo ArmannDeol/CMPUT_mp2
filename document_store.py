@@ -7,6 +7,9 @@ def connection(port):
     db = client['291db']
     return db
 
+def exit():
+    quit()
+
 def main_menu(db):
 
     while True:
@@ -17,38 +20,80 @@ def main_menu(db):
         \n\t 0. Exit \
         \n')
         selection = input('Select from the above options: ')
-
-        if selection == '1':
+        if selection == '0':
+            exit()
+        elif selection == '1':
             searchArticle(db)
 
 def searchArticle(db):
     coll = db['dblp']
-    keywords = input('Enter keywords in a space seperated list: ').split()
+    keywords = input('Enter keywords in a space seperated list: ').lower().split()
+    print(keywords)
+    
     lower = {
         "$project":
             {
-                "title" : {"$toLower" : "$title"},
-                "authors" : {"$toLower" : "$authors"},
-                "abstract" : {"$toLower" : "$abstract"},
-                "venue" : {"$toLower" : "$venue"},
-                "year" : {"$toLower" : "$year"}
+                "title_lower" : 
+                    {
+                        "$map" : 
+                        {
+                            "input" : "$title_tokenized",
+                            "as" : "title_lower",
+                            "in": {"$toLower" : "$$title_lower"}
+                        } 
+                    },
+
+                "abstract_lower" : 
+                    {
+                        "$map" : 
+                        {
+                            "input" : "$abstract_tokenized",
+                            "as" : "abstract_lower",
+                            "in": {"$toLower" : "$$abstract_lower"}
+                        } 
+                    },
+                "venue_lower" : {
+                        "$map" : 
+                        {
+                            "input" : "$venue_tokenized",
+                            "as" : "venue_lower",
+                            "in": {"$toLower" : "$$venue_lower"}
+                        } 
+                    },
+                "authors_lower" : 
+                    {
+                        "$map" : 
+                        {
+                            "input" : "$authors",
+                            "as" : "authors",
+                            "in": {"$toLower" : "$$authors"}
+                        } 
+                    }
             }
     }
-    #year = int(keywords[0])
+
     matching = {
         "$match" :
             {
-                "title" : 
+                "year_string" : 
                     {
-                        "$regex" : keywords[0]
+                        "$in" : keywords
+                            
                     }
+                # "title_tokenized" : 
+                #     {
+                #         "$elemMatch" :
+                #             {
+                #                 "$in" : keywords
+                #             }
+                #     }
                     
             }
     }
     limit = {"$limit" : 5}
     
 
-    pipeline = [matching, limit]
+    pipeline = [lower, matching, limit]
     ret = coll.aggregate(pipeline)
     # ret_count = coll.count_documents({"year" : 2011})
     # print(ret_count)
