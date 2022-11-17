@@ -53,8 +53,10 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
 
 def main():
     db_port = input('Database port: ')
-    
-    jsonfile = input('Enter json file name: ')
+    # jsonfile = "dblp-ref-1m.json"
+    jsonfile = "dblp-ref-1k.json"
+    jsonfile = "dblp-ref-10.json"
+    # jsonfile = input('Enter json file name: ')
     db_name = '291db'
     coll_name = 'dblp'
     mongoimport(jsonfile, db_name, coll_name, db_port)
