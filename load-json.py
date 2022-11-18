@@ -1,8 +1,9 @@
-from pymongo import MongoClient
 import json
+from sys import argv
+from pymongo import MongoClient
 
 
-# TODO: since the actual MongoImport tool is from the command line, maybe we run the command with our python code?
+
 def mongoimport(jsonfile, db_name, coll_name, db_port):
     port_connection = 'mongodb://localhost:' + str(db_port)
     #print(port_connection)
@@ -48,13 +49,18 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
     return 
 #TODO: add text indexs
 
-# ? could we take port number and file name as command line arg which was okayed in forums, could improve productivity?
+# ? added command line argument input because helps with testing
 def main():
-    db_port = input('Database port: ')
+    # print(argv)
+    if (len(argv)) > 1:
+        db_port = str(argv[1])
+        jsonfile = str(argv[2])
+    else:
+        db_port = input('Database port: ')
+        jsonfile = input('Enter json file name: ')
     # jsonfile = "dblp-ref-1m.json"
     # jsonfile = "dblp-ref-1k.json"
-    jsonfile = "dblp-ref-10.json"
-    # jsonfile = input('Enter json file name: ')
+    # jsonfile = "dblp-ref-10.json"
     db_name = '291db'
     coll_name = 'dblp'
     mongoimport(jsonfile, db_name, coll_name, db_port)
