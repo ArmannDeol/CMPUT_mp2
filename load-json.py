@@ -1,10 +1,17 @@
-
+from sys import argv
 from pymongo import MongoClient, TEXT, ASCENDING, DESCENDING
 import json
 
 
-# TODO: since the actual MongoImport tool is from the command line, maybe we run the command with our python code?
 def mongoimport(jsonfile, db_name, coll_name, db_port):
+    """_summary_
+
+    Args:
+        jsonfile (_type_): _description_
+        db_name (_type_): _description_
+        coll_name (_type_): _description_
+        db_port (_type_): _description_
+    """
     port_connection = 'mongodb://localhost:' + str(db_port)
     #print(port_connection)
     client = MongoClient(port_connection)
