@@ -1,9 +1,9 @@
+
+from pymongo import MongoClient, TEXT, ASCENDING, DESCENDING
 import json
-from sys import argv
-from pymongo import MongoClient
 
 
-
+# TODO: since the actual MongoImport tool is from the command line, maybe we run the command with our python code?
 def mongoimport(jsonfile, db_name, coll_name, db_port):
     port_connection = 'mongodb://localhost:' + str(db_port)
     #print(port_connection)
@@ -31,23 +31,58 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
                 "$addFields" : 
                     {
                         "title_tokenized" : {
-                            "$split" : ["$title", " "]
-                        },
+                            "$map" : {
+                            "input" : {"$split" : ["$title", " "]},
+                            "as" : "split_title",
+                            "in" : {"$toLower" : "$$split_title"} 
+                        }},
                         "abstract_tokenized" : {
-                            "$split" : ["$abstract", " "]
-                        },
+                            "$map" : {
+                            "input" : {"$split" : ["$abstract", " "]},
+                            "as" : "split_abstract",
+                            "in" : {"$toLower" : "$$split_abstract"} 
+                        }},
                         "venue_tokenized" : {
-                            "$split" : ["$venue", " "]
-                        },
-                        "year_string" : {"$toString" : "$year"}
+                            "$map" : {
+                            "input" : {"$split" : ["$venue", " "]},
+                            "as" : "split_venue",
+                            "in" : {"$toLower" : "$$split_venue"} 
+                        }},
+                        "authors_lower" : {
+                            "$map" : {
+                            
+                                "input" : "$authors",
+                                "as" : "authors",
+                                "in": {"$toLower" : "$$authors"}
+                        }},
+                        "year_string" : {"$split" : [
+                        {"$toString" : "$year"}, " "]}, 
                     }
             }
+    addIndex = [('title_tokenized', TEXT), ('year_string', TEXT), ('abstract_lower', TEXT), ('venue_lower', TEXT), ('year_string', TEXT), ('year', ASCENDING)]
+
+    
     out = {"$out" : coll_name}
     pipeline = [addTokens, out]
     coll.aggregate(pipeline)
-    print('Loaded ' + str(count) + ' entries...')        
+    addConcatenation = {"$addFields" : {
+            "concatenated" : {"$concatArrays" : 
+            [{"$ifNull" : ["$title_tokenized", []]}, 
+            {"$ifNull" : ["$abstract_tokenized", []]}, 
+            {"$ifNull" : ["$venue_tokenized", []]},
+            {"$ifNull" : ["$authors_lower", []]},
+            {"$ifNull" : ["$year_string", []]}]}
+            }
+        }
+    pipeline = [addConcatenation, out]
+    coll.aggregate(pipeline)
+    
+    print('Loaded ' + str(count) + ' entries...')
+
+    coll.create_index(addIndex)        
     return 
-#TODO: add text indexs
+
+
 
 # ? added command line argument input because helps with testing
 def main():
@@ -67,4 +102,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
