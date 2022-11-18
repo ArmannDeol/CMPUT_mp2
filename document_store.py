@@ -132,6 +132,9 @@ def listVenues(db):
 
 def addArticle(db):
     coll = db['dblp']
+    # while True:
+        # id = input('Please enter a unique article id: ')
+    coll.find_one({{'id':'00638a94-23bf-4fa6-b5ce-40d799c65da7'}})
     # unique id, title, list of authors, year
     # abstract and venue = null
     # references = empty array
