@@ -31,6 +31,7 @@ def main_menu(db):
 
 def searchArticle(db):
     coll = db['dblp']
+
     ret = coll.list_indexes()
     for each in ret:
         print(each)
@@ -56,7 +57,50 @@ def searchArticle(db):
             }
     }
     limit = {"$limit" : 5}
+
     
+    lower = {
+        "$project":
+            {
+                "title_lower" : 
+                    {
+                        "$map" : 
+                        {
+                            "input" : "$title_tokenized",
+                            "as" : "title_lower",
+                            "in": {"$toLower" : "$$title_lower"}
+                        } 
+                    },
+
+                "abstract_lower" : 
+                    {
+                        "$map" : 
+                        {
+                            "input" : "$abstract_tokenized",
+                            "as" : "abstract_lower",
+                            "in": {"$toLower" : "$$abstract_lower"}
+                        } 
+                    },
+                "venue_lower" : {
+                        "$map" : 
+                        {
+                            "input" : "$venue_tokenized",
+                            "as" : "venue_lower",
+                            "in": {"$toLower" : "$$venue_lower"}
+                        } 
+                    },
+                "authors_lower" : 
+                    {
+                        "$map" : 
+                        {
+                            "input" : "$authors",
+                            "as" : "authors",
+                            "in": {"$toLower" : "$$authors"}
+                        } 
+                    }
+            }
+    }
+
 
     pipeline = [matching, limit]
     ret = coll.aggregate(pipeline)
@@ -66,6 +110,7 @@ def searchArticle(db):
     #print(ret[0])
     for each in ret:
         print(str(each))
+
 
 def searchAuthors(db):
     # provide keyword (SINGULAR)
@@ -95,6 +140,12 @@ def listVenues(db):
 
 def addArticle(db):
     coll = db['dblp']
+
+
+    # while True:
+        # id = input('Please enter a unique article id: ')
+    coll.find_one({{'id':'00638a94-23bf-4fa6-b5ce-40d799c65da7'}})
+
     # unique id, title, list of authors, year
     # abstract and venue = null
     # references = empty array

@@ -1,3 +1,4 @@
+
 from pymongo import MongoClient, TEXT, ASCENDING, DESCENDING
 import json
 
@@ -80,19 +81,26 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
 
     coll.create_index(addIndex)        
     return 
-#TODO: add text indexs
 
-# ? could we take port number and file name as command line arg which was okayed in forums, could improve productivity?
+
+
+# ? added command line argument input because helps with testing
 def main():
-    db_port = input('Database port: ')
-    jsonfile = "dblp-ref-1m.json"
-    #jsonfile = "dblp-ref-1k.json"
-    #jsonfile = "dblp-ref-10.json"
-    # jsonfile = input('Enter json file name: ')
+    # print(argv)
+    if (len(argv)) > 1:
+        db_port = str(argv[1])
+        jsonfile = str(argv[2])
+    else:
+        db_port = input('Database port: ')
+        jsonfile = input('Enter json file name: ')
+    # jsonfile = "dblp-ref-1m.json"
+    # jsonfile = "dblp-ref-1k.json"
+    # jsonfile = "dblp-ref-10.json"
     db_name = '291db'
     coll_name = 'dblp'
     mongoimport(jsonfile, db_name, coll_name, db_port)
 
 
 if __name__ == "__main__":
+
     main()
