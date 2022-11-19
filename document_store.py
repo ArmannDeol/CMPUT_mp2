@@ -31,85 +31,28 @@ def main_menu(db):
 
 def searchArticle(db):
     coll = db['dblp']
-
-    ret = coll.list_indexes()
-    for each in ret:
-        print(each)
-    keywords = input('Enter keywords in a space seperated list: ').lower().split()
-    print(keywords)
-
-    matching = {
-        "$match" : 
-            {  
-                "year_string" : {"$nor" : {
-                    {
-                        "$in" : keywords
-                            
-                    }}},
-                "title_tokenized" : 
-                    {
-                        
-                            
-                                "$in" : keywords
-                            
-                    }
-                    
-            }
-    }
-    limit = {"$limit" : 5}
-
     
-    lower = {
-        "$project":
-            {
-                "title_lower" : 
-                    {
-                        "$map" : 
-                        {
-                            "input" : "$title_tokenized",
-                            "as" : "title_lower",
-                            "in": {"$toLower" : "$$title_lower"}
-                        } 
-                    },
+    
+    keywords = input('Enter keywords in a space seperated list: ').lower().split()
+    search_field = '{"'
+    for each in keywords[:-1]:
+        search_field +=  str(each) + '" "'
+    search_field += str(keywords[-1]) + '"}'
+    
 
-                "abstract_lower" : 
-                    {
-                        "$map" : 
-                        {
-                            "input" : "$abstract_tokenized",
-                            "as" : "abstract_lower",
-                            "in": {"$toLower" : "$$abstract_lower"}
-                        } 
-                    },
-                "venue_lower" : {
-                        "$map" : 
-                        {
-                            "input" : "$venue_tokenized",
-                            "as" : "venue_lower",
-                            "in": {"$toLower" : "$$venue_lower"}
-                        } 
-                    },
-                "authors_lower" : 
-                    {
-                        "$map" : 
-                        {
-                            "input" : "$authors",
-                            "as" : "authors",
-                            "in": {"$toLower" : "$$authors"}
-                        } 
-                    }
-            }
-    }
+    find = {
+        "$text" : 
+            {  "$search" : search_field 
+                
+    }}
+    #print(find)
 
-
-    pipeline = [matching, limit]
-    ret = coll.aggregate(pipeline)
-    #ret = coll.find_one()
-    #ret_count = coll.count_documents({"year_string" : '2011'})
-    #print(ret_count)
-    #print(ret[0])
+    ret = coll.find(find)
+    count = 0
     for each in ret:
         print(str(each))
+        count += 1
+    print(count)
 
 
 def searchAuthors(db):
