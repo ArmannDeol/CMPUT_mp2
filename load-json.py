@@ -34,15 +34,10 @@ def mongoimport(jsonfile, db_name, coll_name, db_port):
             line = file.readline()
             count += 1
     
-    addTokens = {"$addFields" : {"year_string" :{"$toString" : "$year"}}} # Probably don't need this 
-    addIndex = [('title', TEXT), ('year', TEXT), ('abstract', TEXT), ('venue', TEXT), ('year_string', TEXT), ('authors', TEXT)]
-    
-    out = {"$out" : coll_name}
-    pipeline = [addTokens, out]
-    coll.aggregate(pipeline)
-    
-    print('Loaded ' + str(count) + ' entries...')
+    addIndex = [('title', TEXT), ('year', TEXT), ('abstract', TEXT), ('venue', TEXT), ('authors', TEXT)]
 
+    print('Loaded ' + str(count) + ' entries...')
+    print('Creating Indexes...')
     coll.create_index(addIndex)        
     return 
 
@@ -57,7 +52,7 @@ def main():
     else:
         db_port = input('Database port: ')
         #jsonfile = input('Enter json file name: ')
-    # jsonfile = "dblp-ref-1m.json"
+    #jsonfile = "dblp-ref-1m.json"
     jsonfile = "dblp-ref-1k.json"
     # jsonfile = "dblp-ref-10.json"
     db_name = '291db'
