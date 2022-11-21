@@ -1,17 +1,40 @@
 from pymongo import MongoClient
 
-
 def connection(port):
+    '''
+    Connects to mongodb database.
+
+        Parameters:
+            port (String) - Port number
+        Returns:
+            db (Object) - Database pointer
+    '''
+
     port_connection = 'mongodb://localhost:' + str(port)
     client = MongoClient(port_connection)
     db = client['291db']
     return db
 
 def exit():
+    '''
+    Exits program
+
+            Parameters:
+                None
+            Returns:
+                None
+    '''
     quit()
 
 def main_menu(db):
+    '''
+    Main menu to select what action to take
 
+            Parameters: 
+                db (Object) - Database pointer
+            Returns:
+                None
+    ''' 
     while True:
         print('\n\t\t Main Menu \
         \n\t 1. Search for articles \
@@ -20,7 +43,7 @@ def main_menu(db):
         \n\t 4. Add an article \
         \n\t 0. Exit \
         \n')
-        selection = input('Select from the above options: ')
+        selection = input('Select from the above options: ').strip()
         if selection == '0':
             exit()
         elif selection == '1':
@@ -33,28 +56,40 @@ def main_menu(db):
             print('Please select a valid option...')
 
 def searchArticle(db):
+    '''
+    Searches for articles where keywords. Also allows users to select
+    an article and see more information
+
+            Parameters:
+                db (Object) - Database pointer
+            Returns:
+                None
+    '''
+
     coll = db['dblp']
     
     keywords = input('Enter keywords in a space seperated list: ').lower().split()
     if keywords == []:
         return
     search_field = '{"'
+    # Creates string that will confirm all keywords exist
     for each in keywords[:-1]:
         search_field +=  str(each) + '" "'
     search_field += str(keywords[-1]) + '"}'
     
-
     find = {
         "$text" : 
             {  "$search" : search_field 
                 
     }}
-    #print(find)
-
+    # Performs text search on database and creates a copy of retrieved
+    # cursor for querying 
     matches = coll.find(find)
     matches2 = matches.clone()
+
     index = 0
-    info = []    
+    info = []
+    # Formats output to the user    
     for each in matches:
         option = ''
         if each['id'] == '':
@@ -79,9 +114,14 @@ def searchArticle(db):
 
         info.insert(index, option)
         index += 1
+
+    if info == []:
+        print('No matches...')
+        return
+
     header = '\t ID || Title || Year || Venue'
     selection = paginate(info, header)
-
+    # Displays more information on article of user's choice
     if selection != None:
         output = matches2.__getitem__(selection)
         if 'id' in output:
@@ -116,6 +156,7 @@ def searchArticle(db):
         else:
             print('Authors: None')
 
+        # Prints information on other articles that reference the user's choice
         referenced = coll.find({"references" : output["id"]})
         referenced_count = coll.count_documents({"references" : output["id"]})
         if referenced_count == 0:
@@ -137,36 +178,75 @@ def searchArticle(db):
                     print('Year: ' + str(output['year']))
                 else:
                     print('Year: None')
+
     return
 
 def searchAuthors(db):
-    # provide keyword (SINGULAR)
-    # all authors whose name contain the keyword, case insensitive
-    # for each author: list name, number of publications
-    # user can select author and see title, year, and venue of all articles by that author
-    # results should be sorted based on year with recent articles showing up first
+    '''
+    Searches for authors name based on a single keyword. Also
+    allows user to see more information on author
+
+            Parameters:
+                db (Object) - Database pointer
+            Returns:
+                None
+    '''
+
     coll = db['dblp']
     keyword = input('Enter keyword: ').lower()
     find = {
         "$text" : 
-            {  "$search" : keyword 
-                
+            {  "$search" : keyword        
     }}
+    # Performs text search to find all authors who collaborated with an author whose name 
+    # matches the keyword
     matches_unfiltered = coll.distinct("authors", find)
+    print('Search finished, formating output...')
+
     matches = []
     info = []
     index = 0
+    # Formats output to the user and filters out non-matching authors
     for each in matches_unfiltered:
         if keyword in str(each).lower():
             matches.insert(index, each)
-            
             count = coll.count_documents({"authors" : each})
             option = str(each) + ' || ' + str(count)
             info.insert(index, option)
             index += 1
+
+    if matches == []:
+        print('No matches...')
+        return
+
     header = '\tArtist Name || Number of Publications'
     selection = paginate(info, header)
-          
+    if selection == None:
+        return
+    # Finds info on selected author and displays it to the user
+    ret = coll.find({'authors' : str(matches[selection])}, {"_id" : 0, "id" : 1, "title" : 1, "year" : 1}).sort("year")
+    print('\n\t ' + str(matches[selection]))
+    count = 1
+    for output in ret:
+        print('\nArticle ' + str(count) + ':')
+        count += 1
+        if 'title' in output:
+           print('Title: ' + str(output['title']))
+        else:
+            print('Title: None')
+
+        if 'year' in output:
+           print('Year: ' + str(output['year']))
+        else:
+            print('Year: None')
+        
+        if 'venue' in output:
+           print('Venue: ' + str(output['venue']))
+        else:
+            print('Venue: None')
+
+    if count == 1:
+        print('No Articles from this author.')
     return
 
 def listVenues(db):
@@ -201,7 +281,17 @@ def addArticle(db):
     return 
 
 def paginate(info, header, label = None):
-    
+    '''
+    Formats output to the user in a paginated format.
+    Allows user to select from one of the options.
+
+            Parameters:
+                info (List) - Array containing a formatted output
+                header (String) - String that describes what is outputted
+                label (String) - String that can replace the default search header
+            Returns:
+                selection (String) - Index of the selected output, or None if none is selected
+    '''
     amount = 1
     paginated = []
     change = True
@@ -214,6 +304,7 @@ def paginate(info, header, label = None):
             print('\t\t Search Results')
 
         print(header)
+        # Paginates the desired output
         while amount <= len(info) and i < 5 and change == True:
             paginated.insert(i, info[amount-1])
             i += 1
@@ -226,29 +317,31 @@ def paginate(info, header, label = None):
             
         print('\t6. Page Up \n\t7. Page Down \n\t0. Back')
         selection = input('\nSelect from the above options: ')
+        # Prompts user to make a selection and returns that input
         if selection.strip() == '0':
             return
+
         elif selection.strip() == '6':
             amount = amount - index - 5
             paginated = []
             i = 0
             if amount <= 0:
                 amount = 1
+
         elif selection.strip() == '7':
             if amount <= len(info):
                 paginated = []
                 i = 0
             continue
+
         elif selection.strip() == '1':
             change = False
             return(amount-i-1)
                 
-                
         elif selection.strip() == '2':
             change = False 
             if i >= 2:
-                return(amount-i)
-                    
+                return(amount-i)   
             else:
                 print('Please select a valid option...')
 
@@ -277,7 +370,6 @@ def paginate(info, header, label = None):
         else:
             print('Please enter a valid option...')
             change = False
-
 
 def main():
     port = input('Enter port number: ')
