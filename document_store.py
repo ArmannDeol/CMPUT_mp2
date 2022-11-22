@@ -268,12 +268,41 @@ def listVenues(db):
 
 def addArticle(db):
     coll = db['dblp']
-
-
-    # while True:
-        # id = input('Please enter a unique article id: ')
-    coll.find_one({{'id':'00638a94-23bf-4fa6-b5ce-40d799c65da7'}})
-
+    # 0040b022-1472-4f70-a753-74832df65266
+    while True:
+        id = input('Please enter a unique article ID: ')
+        matches = coll.find_one(
+            # query
+            {'id' : id},
+            # fields to display
+            {},
+        )
+        if matches is None:
+            print('Article ID is unique')
+            break
+        else:
+            print('Article ID is not unique')
+    # collecting specified data
+    title = input('Please enter the article title: ')
+    authors = []
+    author = ''
+    print('Please enter all the authors names then enter "-1" when finished')
+    while True:
+        author = input('Author: ')
+        if author == '-1':
+            break
+        else:
+            authors.append(author)
+    while True:
+        try:
+            year = int(input('Please enter the article year: '))
+        except ValueError:
+            print('Please enter a valid year')
+            continue
+        else:
+            break
+    print(title, authors, year)
+    # TODO insert data into database
     # unique id, title, list of authors, year
     # abstract and venue = null
     # references = empty array
