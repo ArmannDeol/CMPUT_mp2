@@ -86,6 +86,7 @@ def searchArticle(db):
     # cursor for querying 
     matches = coll.find(find)
     matches2 = matches.clone()
+    print('Search finished, formating output...')
 
     index = 0
     info = []
