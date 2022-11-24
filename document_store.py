@@ -263,7 +263,65 @@ def listVenues(db):
         else:
             print('Displaying top',n, 'venues...')
             break
-    # rest of code
+    # TODO QUERY, REFERENCES INDEX
+    # top venues as venue3 with 2 unique articles referencing venue3 and venue4 with 1 unique article referencing venue4
+    lookup = [
+        {
+            '$lookup' :
+                {
+                    'from' : 'venueInfo',
+                    'localField': 'references',
+                    'foreignField': 'id',
+                    'as' : 'refs'
+                }
+        },
+        {
+            '$project' : {'venue': 1, 'refs' : 1}
+        },
+        # ! gets number of ref per venue
+        # {
+        #     '$project' : {'id' : 1, 'venue' : 1,
+        #                   'num_ref': {'$cond': {'if': { '$isArray': "$refs"}, 
+        #                                         'then': {'$size': "$refs" }, 
+        #                                         'else': "NA"}}}
+        # },
+        # {
+        #     '$sort' : {'num_ref' : -1 }
+        # },
+        # {
+        #     "$limit" : n
+        # }
+    ]
+    agg = [
+            # grouping 
+            {
+                '$group' : 
+                {'_id' : '$venue', 
+                'num_articles_in_venue' : {"$sum" : 1}
+                }
+            },
+            {
+                '$project' : {'venue' : '$_id', '_id' : 0, 'num_articles_in_venue': 1}
+            },
+            # sort
+            {
+                '$sort' : 
+                {'num_articles_in_venue' : -1 }
+            },
+            # limit
+            {
+                "$limit" : n
+            }
+    ]
+    # filter = {'venue' : 1, 'n_citation' : 1}
+    # refs = {'references':'3fcd7cdc-20e6-4ea3-a41c-db126fcc5cfe'}
+    # matches = coll.find({}, filter)
+    # matches = coll.aggregate(agg)
+    matches = coll.aggregate(lookup)
+    # matches = coll.find(refs)
+    for e in matches:
+        print(e)
+        print('-'*80)
     # for each venue: list venue, number of articles in venue, number of articles that reference paper in venue,
     # sort results based on number of papers that reference that venue
     return
@@ -273,12 +331,7 @@ def addArticle(db):
     # 0040b022-1472-4f70-a753-74832df65266
     while True:
         id = input('Please enter a unique article ID: ')
-        matches = coll.find_one(
-            # query
-            {'id' : id},
-            # fields to display
-            {},
-        )
+        matches = coll.find_one({'id' : id})
         if matches is None:
             print('Article ID is unique')
             break
@@ -303,12 +356,22 @@ def addArticle(db):
             continue
         else:
             break
-    print(title, authors, year)
-    # TODO insert data into database
-    # unique id, title, list of authors, year
-    # abstract and venue = null
-    # references = empty array
-    # n_citations = 0
+    # TODO DELETE
+    # print(title, authors, year)
+    # creating and inserting document
+    article = {'abstract' : '',
+               'authors' : authors,
+               'n_citation' : 0,
+               'references' : [],
+               'title' : title,
+               'venue' : '',
+               'year' : year,
+               'id' : id
+               }
+    coll.insert_one(article)
+    # TODO DELETE
+    # matches = coll.find_one({'id' : id})
+    # print(matches)
     return 
 
 def paginate(info, header, label = None):
