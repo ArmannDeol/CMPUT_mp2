@@ -35,16 +35,35 @@ class TestName(unittest.TestCase):
     #     matches = coll.find_one({'id' : id})
     #     self.assertIsNotNone(matches)
     
-    @patch('document_store.input', create=True)
-    def test_listVenues(self, mock_input):
-        port = '2000'
-        run(['python3', 'load-json.py', port, 'dblp-test.json'])
-        self.db = ds.connection(port)
+    # @patch('document_store.input', create=True)
+    # def test_listVenues_test(self, mock_input):
+    #     port = '2000'
+    #     run(['python3', 'load-json.py', port, 'dblp-test.json'])
+    #     self.db = ds.connection(port)
+    #     n = 3
+    #     # imitates user input
+    #     mock_input.side_effect = [n]
+    #     ds.listVenues(self.db)
         
-        n = 3
+    @patch('document_store.input', create=True)
+    def test_listVenues_1k(self, mock_input):
+        port = '2000'
+        run(['python3', 'load-json.py', port, 'dblp-ref-1k.json'])
+        self.db = ds.connection(port)
+        n = 5
         # imitates user input
         mock_input.side_effect = [n]
         ds.listVenues(self.db)
+        
+    # @patch('document_store.input', create=True)
+    # def test_listVenues_1m(self, mock_input):
+    #     port = '2000'
+    #     run(['python3', 'load-json.py', port, 'dblp-ref-1m.json'])
+    #     self.db = ds.connection(port)
+    #     n = 5
+    #     # imitates user input
+    #     mock_input.side_effect = [n]
+    #     ds.listVenues(self.db)
 
 if __name__ == '__main__':
     unittest.main()
