@@ -1,4 +1,5 @@
 from pymongo import MongoClient
+from sys import argv
 
 def connection(port):
     '''
@@ -19,10 +20,10 @@ def exit():
     '''
     Exits program
 
-            Parameters:
-                None
-            Returns:
-                None
+        Parameters:
+            None
+        Returns:
+            None
     '''
     quit()
 
@@ -30,10 +31,10 @@ def main_menu(db):
     '''
     Main menu to select what action to take
 
-            Parameters: 
-                db (Object) - Database pointer
-            Returns:
-                None
+        Parameters: 
+            db (Object) - Database pointer
+        Returns:
+            None
     ''' 
     while True:
         print('\n\t\t Main Menu \
@@ -52,6 +53,8 @@ def main_menu(db):
             searchAuthors(db)
         elif selection == '3':
             listVenues(db)
+        elif selection == '4':
+            addArticle(db)
         else:
             print('Please select a valid option...')
 
@@ -60,10 +63,10 @@ def searchArticle(db):
     Searches for articles where keywords. Also allows users to select
     an article and see more information
 
-            Parameters:
-                db (Object) - Database pointer
-            Returns:
-                None
+        Parameters:
+            db (Object) - Database pointer
+        Returns:
+            None
     '''
 
     coll = db['dblp']
@@ -187,19 +190,18 @@ def searchAuthors(db):
     Searches for authors name based on a single keyword. Also
     allows user to see more information on author
 
-            Parameters:
-                db (Object) - Database pointer
-            Returns:
-                None
+        Parameters:
+            db (Object) - Database pointer
+        Returns:
+            None
     '''
-
+    # text search to find all authors who collaborated with an author whose name 
     coll = db['dblp']
     keyword = input('Enter keyword: ').lower()
     find = {
         "$text" : 
             {  "$search" : keyword        
     }}
-    # Performs text search to find all authors who collaborated with an author whose name 
     # matches the keyword
     matches_unfiltered = coll.distinct("authors", find)
     print('Search finished, formating output...')
@@ -252,8 +254,15 @@ def searchAuthors(db):
     return
 
 def listVenues(db):
-    coll = db['dblp']
-    # n is valid
+    '''
+    For the top n venues list the venue, the number of articles in that venue, and the number of articles that reference a paper in that venue. Sort the result based on the number of papers that reference the venue with the top most cited venues shown first.
+    
+        Parameters:
+            db (Object) - Database pointer
+        Returns:
+            None
+    '''
+    venueInfo = db['venueInfo']
     while True:
         try:
             n = int(input('Enter an integer to list the top number of venues: '))
@@ -263,77 +272,47 @@ def listVenues(db):
         else:
             print('Displaying top',n, 'venues...')
             break
-    # TODO QUERY, REFERENCES INDEX
-    # top venues as venue3 with 2 unique articles referencing venue3 and venue4 with 1 unique article referencing venue4
-    lookup = [
-        {
-            '$lookup' :
-                {
-                    'from' : 'venueInfo',
-                    'localField': 'references',
-                    'foreignField': 'id',
-                    'as' : 'refs'
-                }
-        },
-        {
-            '$project' : {'venue': 1, 'refs' : 1}
-        },
-        # ! gets number of ref per venue
-        # {
-        #     '$project' : {'id' : 1, 'venue' : 1,
-        #                   'num_ref': {'$cond': {'if': { '$isArray': "$refs"}, 
-        #                                         'then': {'$size': "$refs" }, 
-        #                                         'else': "NA"}}}
-        # },
-        # {
-        #     '$sort' : {'num_ref' : -1 }
-        # },
-        # {
-        #     "$limit" : n
-        # }
-    ]
     agg = [
-            # grouping 
+            {'$match' : {'venue' : {'$ne' : ""}}},
             {
-                '$group' : 
-                {'_id' : '$venue', 
-                'num_articles_in_venue' : {"$sum" : 1}
-                }
+                '$project' : {'venue' : '$_id', '_id' : 0, 'num_articles_in_venue': 1, 'num_articles_refs_venue' : 1}
             },
-            {
-                '$project' : {'venue' : '$_id', '_id' : 0, 'num_articles_in_venue': 1}
-            },
-            # sort
-            {
-                '$sort' : 
-                {'num_articles_in_venue' : -1 }
-            },
-            # limit
-            {
-                "$limit" : n
-            }
+            {'$sort' : {'num_articles_refs_venue' : -1 }},
+            {"$limit" : n}
     ]
-    # filter = {'venue' : 1, 'n_citation' : 1}
-    # refs = {'references':'3fcd7cdc-20e6-4ea3-a41c-db126fcc5cfe'}
-    # matches = coll.find({}, filter)
-    # matches = coll.aggregate(agg)
-    matches = coll.aggregate(lookup)
-    # matches = coll.find(refs)
-    for e in matches:
-        print(e)
-        print('-'*80)
-    # for each venue: list venue, number of articles in venue, number of articles that reference paper in venue,
-    # sort results based on number of papers that reference that venue
+    matches = venueInfo.aggregate(agg)
+    # checking if there is data in matches
+    if matches.alive:
+        i = 1
+        for e in matches:
+            if e['venue'] == '':
+                continue
+            print('-'*80)
+            print('Venue', i)
+            print('Venue:', e['venue'])
+            print('Number of articles in venue:', e['num_articles_in_venue'])
+            print('Number of articles referencing the venue:', e['num_articles_refs_venue'])
+            print('-'*80)
+            i += 1
+    else:
+        print('No top venues were found...')
     return
 
 def addArticle(db):
+    '''
+    Add an article to the collection by providing a unique id, a title, a list of authors, and a year.
+
+        Parameters:
+            db (Object) - Database pointer
+        Returns:
+            None
+    '''
     coll = db['dblp']
-    # 0040b022-1472-4f70-a753-74832df65266
     while True:
         id = input('Please enter a unique article ID: ')
         matches = coll.find_one({'id' : id})
         if matches is None:
-            print('Article ID is unique')
+            print('Article ID is unique...')
             break
         else:
             print('Article ID is not unique')
@@ -356,8 +335,6 @@ def addArticle(db):
             continue
         else:
             break
-    # TODO DELETE
-    # print(title, authors, year)
     # creating and inserting document
     article = {'abstract' : '',
                'authors' : authors,
@@ -366,12 +343,9 @@ def addArticle(db):
                'title' : title,
                'venue' : '',
                'year' : year,
-               'id' : id
-               }
+               'id' : id}
     coll.insert_one(article)
-    # TODO DELETE
-    # matches = coll.find_one({'id' : id})
-    # print(matches)
+    print('Article', id, 'has been inserted...')
     return 
 
 def paginate(info, header, label = None):
@@ -379,12 +353,12 @@ def paginate(info, header, label = None):
     Formats output to the user in a paginated format.
     Allows user to select from one of the options.
 
-            Parameters:
-                info (List) - Array containing a formatted output
-                header (String) - String that describes what is outputted
-                label (String) - String that can replace the default search header
-            Returns:
-                selection (String) - Index of the selected output, or None if none is selected
+        Parameters:
+            info (List) - Array containing a formatted output
+            header (String) - String that describes what is outputted
+            label (String) - String that can replace the default search header
+        Returns:
+            selection (String) - Index of the selected output, or None if none is selected
     '''
     amount = 1
     paginated = []
@@ -466,8 +440,12 @@ def paginate(info, header, label = None):
             change = False
 
 def main():
-    port = input('Enter port number: ')
-    db = connection(port)
+    if (len(argv)) > 1:
+        db_port = str(argv[1])
+    else:
+        print('Please enter <port> argument')
+        quit()
+    db = connection(db_port)
     main_menu(db)
 
 if __name__ == "__main__":
