@@ -209,7 +209,8 @@ def searchAuthors(db):
     index = 0
     # Formats output to the user and filters out non-matching authors
     for each in matches_unfiltered:
-        if keyword in str(each).lower():
+        each_tokenized = each.lower().split()
+        if keyword in each_tokenized:
             matches.insert(index, each)
             count = coll.count_documents({"authors" : each})
             option = str(each) + ' || ' + str(count)
